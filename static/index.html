@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>NFSU Library - Self-Service Kiosk</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="kiosk-body">
+
+  <!-- Background Image with Overlay -->
+  <div class="kiosk-bg-layer" id="bgLayer">
+    <div class="kiosk-bg-overlay"></div>
+  </div>
+
+  <!-- Top Bar: Connectivity & Security Status -->
+  <header class="kiosk-topbar">
+    <div class="topbar-left">
+      <span class="status-indicator live" id="kohaStatusDot"></span>
+      <span class="status-text" id="kohaStatusText">Koha 26 SIP2: Connected (117.239.182.15:6001)</span>
+      <span class="koha-mode-badge" id="kohaModeBadge">LIVE SIP2</span>
+    </div>
+
+    <div class="topbar-center" id="sessionTimerContainer" style="display: none;">
+      <span class="timer-icon">⏱️</span>
+      <span class="timer-label">Auto Logout:</span>
+      <span class="timer-count" id="sessionTimerText">30s</span>
+    </div>
+
+    <div class="topbar-right">
+      <button class="topbar-btn" id="btnSecurityAudit" title="Security & Compliance Audit">
+        <span class="btn-icon">🛡️</span>
+        <span>Security Audit</span>
+      </button>
+      <button class="topbar-btn gate-btn" id="btnGateSimulator" title="Exit Gate Simulator">
+        <span class="btn-icon">🚨</span>
+        <span>Test Exit Gate</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Kiosk Container -->
+  <main class="kiosk-main-container">
+
+    <!-- SCREEN 1: LANDING / HOME SCREEN (Matches projector slide) -->
+    <section class="kiosk-screen active" id="screenHome">
+      <div class="kiosk-hero-card">
+        <!-- University Branding -->
+        <div class="brand-header">
+          <img src="/static/images/nfsu_logo.png" alt="NFSU Emblem" class="nfsu-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>'">
+          <div class="brand-text">
+            <h1 class="brand-title">National Forensic Sciences University</h1>
+            <p class="brand-motto">Knowledge | Wisdom | Fulfilment</p>
+            <p class="brand-sub">An Institution of National Importance (Ministry of Home Affairs, Government of India)</p>
+          </div>
+        </div>
+
+        <div class="kiosk-divider"></div>
+
+        <!-- Identification Method Selector -->
+        <div class="auth-method-selector">
+          <p class="auth-prompt">Select identification method or tap your card to begin:</p>
+          <div class="auth-tabs">
+            <button class="auth-tab" id="tabFaceAuth">
+              <span class="tab-icon">👤</span>
+              <span class="tab-title">Face Recognition</span>
+              <span class="tab-badge">AI Liveness</span>
+            </button>
+            <button class="auth-tab" id="tabCardAuth">
+              <span class="tab-icon">💳</span>
+              <span class="tab-title">MIFARE Smart Card</span>
+              <span class="tab-badge">NFC / RFID</span>
+            </button>
+            <button class="auth-tab" id="tabBarcodeAuth">
+              <span class="tab-icon">🏷️</span>
+              <span class="tab-title">Patron Barcode</span>
+              <span class="tab-badge">Laser / ID</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Primary Circulation Actions (Matching projector photo) -->
+        <div class="circulation-actions-grid">
+          <button class="action-card issue-card" id="btnActionIssue">
+            <div class="action-icon-wrap">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><path d="M12 6v6"></path><path d="M9 9h6"></path></svg>
+            </div>
+            <div class="action-card-info">
+              <h2 class="action-title">ISSUE</h2>
+              <p class="action-desc">Check out library books (Limit: 2 books max)</p>
+            </div>
+          </button>
+
+          <button class="action-card return-card" id="btnActionReturn">
+            <div class="action-icon-wrap">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><path d="M9 10l3-3 3 3"></path><path d="M12 7v7"></path></svg>
+            </div>
+            <div class="action-card-info">
+              <h2 class="action-title">RETURN</h2>
+              <p class="action-desc">Return books & re-arm security tags</p>
+            </div>
+          </button>
+
+          <button class="action-card renew-card" id="btnActionRenew">
+            <div class="action-icon-wrap">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+            </div>
+            <div class="action-card-info">
+              <h2 class="action-title">RENEW</h2>
+              <p class="action-desc">Extend due dates on active borrowed books</p>
+            </div>
+          </button>
+        </div>
+
+        <!-- Quick Hardware / Simulator Dock -->
+        <div class="hardware-dock">
+          <span class="dock-label">💡 Demonstration Quick-Scan:</span>
+          <button class="dock-chip" data-scan="patron" data-id="NFSU2024001">Tap Card: Aarav (0/2 Books)</button>
+          <button class="dock-chip" data-scan="patron" data-id="NFSU2024002">Tap Card: Priya (1/2 Books)</button>
+          <button class="dock-chip danger-chip" data-scan="patron" data-id="NFSU2024003">Tap Card: Dr. Verma (2/2 - Limit Reached!)</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SCREEN 2: CIRCULATION WORKSPACE (Issue, Return, Renew) -->
+    <section class="kiosk-screen" id="screenCirculation">
+      <div class="circulation-panel">
+        
+        <!-- Patron Context Header -->
+        <div class="patron-context-bar">
+          <div class="patron-avatar">👤</div>
+          <div class="patron-meta">
+            <h3 class="patron-name" id="displayPatronName">Patron Name</h3>
+            <span class="patron-sub" id="displayPatronId">ID: NFSU-0000</span>
+          </div>
+
+          <!-- Strict 2-Book Borrowing Limit Pill -->
+          <div class="limit-status-box" id="limitStatusBox">
+            <div class="limit-badge" id="limitBadge">
+              <span class="limit-icon">📚</span>
+              <span class="limit-text" id="limitText">Borrowed: 0 / 2 Books</span>
+            </div>
+            <span class="limit-notice" id="limitNotice">2 Slots Available</span>
+          </div>
+
+          <button class="btn-logout" id="btnEndSession">
+            <span>Finish & Logout</span>
+            <span class="icon">🚪</span>
+          </button>
+        </div>
+
+        <!-- Limit Reached Alert Banner (Visible when count >= 2) -->
+        <div class="limit-alert-banner" id="limitAlertBanner" style="display: none;">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-content">
+            <h4>BORROWING POLICY LIMIT REACHED (2 / 2 Books)</h4>
+            <p>University library policy restricts patrons to a maximum of 2 books at a time. You cannot check out more books until you return at least one currently borrowed book.</p>
+          </div>
+          <button class="btn-switch-return" id="btnQuickSwitchReturn">Go to Returns 🔄</button>
+        </div>
+
+        <!-- Circulation Mode Switcher Tabs -->
+        <div class="circ-mode-tabs">
+          <button class="circ-tab active" data-mode="ISSUE" id="circTabIssue">
+            <span>📥 Issue Books</span>
+          </button>
+          <button class="circ-tab" data-mode="RETURN" id="circTabReturn">
+            <span>📤 Return Books</span>
+          </button>
+          <button class="circ-tab" data-mode="RENEW" id="circTabRenew">
+            <span>🔄 Renew Books</span>
+          </button>
+        </div>
+
+        <!-- Book Scanner Input Area -->
+        <div class="scan-input-card">
+          <div class="scan-icon-pulse">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"></path><rect x="7" y="7" width="10" height="10" rx="1"></rect></svg>
+          </div>
+          <div class="scan-input-wrap">
+            <label id="scanInputLabel">Scan book barcode or place item on RFID pad:</label>
+            <div class="input-with-button">
+              <input type="text" id="inputBookBarcode" placeholder="e.g. BK-FOR-101, BK-CYB-201..." autocomplete="off">
+              <button class="btn-scan-action" id="btnExecuteScan">Process Item</button>
+            </div>
+          </div>
+          <div class="quick-sample-books">
+            <span class="sample-label">Quick Test Items:</span>
+            <button class="book-chip" data-barcode="BK-FOR-101">BK-FOR-101 (Forensic Science)</button>
+            <button class="book-chip" data-barcode="BK-CYB-201">BK-CYB-201 (Cyber Forensics)</button>
+            <button class="book-chip" data-barcode="BK-TOX-501">BK-TOX-501 (Toxicology)</button>
+            <button class="book-chip" data-barcode="BK-DNA-601">BK-DNA-601 (DNA Profiling)</button>
+          </div>
+        </div>
+
+        <!-- Transaction Items Tray / Table -->
+        <div class="items-tray-card">
+          <div class="tray-header">
+            <h4 id="trayTitle">Session Transaction Items</h4>
+            <span class="tray-counter" id="trayCountBadge">0 Items</span>
+          </div>
+
+          <div class="tray-list" id="trayItemsList">
+            <div class="tray-empty-state">
+              <span class="empty-icon">📖</span>
+              <p>No items scanned yet in this session. Scan a book barcode or place it on the RFID antenna above.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Actions & Receipt -->
+        <div class="circulation-footer">
+          <div class="footer-left">
+            <span class="koha-verified-seal">
+              <span class="seal-icon">✓</span>
+              <span>All transactions validated through Koha SIP2 in real time</span>
+            </span>
+          </div>
+          <div class="footer-right">
+            <button class="btn-print-slip" id="btnPrintSlip">
+              <span>🖨️ Print Receipt Slip</span>
+            </button>
+            <button class="btn-finish-all" id="btnFinishSession">
+              <span>Finish & Logout</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: FACE RECOGNITION & LIVENESS DETECTION -->
+  <div class="kiosk-modal" id="modalFaceAuth">
+    <div class="modal-card face-modal-card">
+      <div class="modal-header">
+        <h3>AI Facial Authentication</h3>
+        <button class="modal-close" id="btnCloseFaceModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="camera-viewport-wrap">
+          <video id="webcamVideo" autoplay playsinline muted class="camera-feed"></video>
+          <canvas id="faceCanvas" class="face-overlay"></canvas>
+          <div class="face-guide-frame">
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+            <div class="liveness-scanline"></div>
+          </div>
+          <div class="liveness-indicator" id="livenessPrompt">
+            <span>👁️ Look directly into camera for liveness verification</span>
+          </div>
+        </div>
+
+        <div class="biometric-privacy-badge">
+          <span class="privacy-icon">🔒</span>
+          <div class="privacy-text">
+            <strong>NFSU Forensic Privacy Standard:</strong>
+            <span>Zero raw image storage. Frame data is processed in ephemeral memory and discarded immediately after verification.</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-primary" id="btnVerifyFaceLive">Verify & Login</button>
+          <button class="btn-secondary" id="btnSimulateFace">Simulate Verified Patron</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EXIT GATE SECURITY ALARM SIMULATOR -->
+  <div class="kiosk-modal" id="modalGateSimulator">
+    <div class="modal-card gate-modal-card">
+      <div class="modal-header">
+        <div class="header-with-icon">
+          <span class="siren-icon" id="modalSirenIcon">🚨</span>
+          <h3>Library RFID Exit Security Gate</h3>
+        </div>
+        <button class="modal-close" id="btnCloseGateModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="gate-desc">
+          Test passing an item through the library exit RFID pedestals.
+          Legitimately checked-out items have their <strong>AFI tag disarmed (0x07)</strong> and pass freely. 
+          Unissued or unverified books remain <strong>ARMED (AFI 0xC2)</strong> and trigger the alarm!
+        </p>
+
+        <div class="gate-test-controls">
+          <label>Select or enter item to bring to exit gate:</label>
+          <div class="input-with-button">
+            <input type="text" id="gateTestBarcode" placeholder="Enter barcode (e.g. BK-TOX-501)..." value="BK-TOX-501">
+            <button class="btn-trigger-gate" id="btnPassThroughGate">Walk Through Gate</button>
+          </div>
+        </div>
+
+        <!-- Gate Pedestal Graphic & Live Result -->
+        <div class="gate-visual-zone" id="gateVisualZone">
+          <div class="pedestal pedestal-left">
+            <div class="gate-sensor-light" id="gateLightLeft"></div>
+            <div class="pedestal-label">RFID Pedestal A</div>
+          </div>
+
+          <div class="gate-corridor" id="gateCorridor">
+            <div class="gate-status-screen" id="gateStatusScreen">
+              <span class="gate-state-icon" id="gateStateIcon">🚪</span>
+              <h4 id="gateStateHeading">Gate Ready</h4>
+              <p id="gateStateMessage">Pass an item to test security sensors</p>
+            </div>
+          </div>
+
+          <div class="pedestal pedestal-right">
+            <div class="gate-sensor-light" id="gateLightRight"></div>
+            <div class="pedestal-label">RFID Pedestal B</div>
+          </div>
+        </div>
+
+        <div class="gate-test-shortcuts">
+          <span>Quick Scenarios:</span>
+          <button class="shortcut-chip success" id="btnTestDisarmedBook">Test Checked-Out Book (Safe)</button>
+          <button class="shortcut-chip danger" id="btnTestArmedBook">Test Stolen / Unissued Book (Alarm 🚨)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FORENSIC SECURITY & AUDIT DASHBOARD -->
+  <div class="kiosk-modal" id="modalSecurityAudit">
+    <div class="modal-card audit-modal-card">
+      <div class="modal-header">
+        <h3>Forensic Security & Compliance Dashboard</h3>
+        <button class="modal-close" id="btnCloseAuditModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Security Pillars Grid -->
+        <div class="audit-metrics-grid">
+          <div class="metric-card pass">
+            <div class="metric-value">0 Bytes</div>
+            <div class="metric-title">Biometric Disk Persistence</div>
+            <div class="metric-desc">Zero-Retention Verified: All face frames purged from RAM.</div>
+          </div>
+          <div class="metric-card pass">
+            <div class="metric-value">CRC-16 AZ</div>
+            <div class="metric-title">SIP2 Checksum Integrity</div>
+            <div class="metric-desc">Tamper-proof protocol hashing on all Koha packets.</div>
+          </div>
+          <div class="metric-card pass">
+            <div class="metric-value">2 Books</div>
+            <div class="metric-title">Borrowing Limit Guard</div>
+            <div class="metric-desc">Hard policy constraint preventing unauthorized issuance.</div>
+          </div>
+          <div class="metric-card pass">
+            <div class="metric-value">30s Active</div>
+            <div class="metric-title">Session Ephemerality</div>
+            <div class="metric-desc">Auto-clears patron credentials and memory on idle.</div>
+          </div>
+        </div>
+
+        <!-- Cryptographic Audit Trail -->
+        <div class="audit-log-container">
+          <h4>Cryptographic SHA-256 Audit Trail</h4>
+          <div class="audit-log-table-wrap">
+            <table class="audit-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Category</th>
+                  <th>Action</th>
+                  <th>Details</th>
+                  <th>Hash Chaining</th>
+                </tr>
+              </thead>
+              <tbody id="auditLogTbody">
+                <tr><td colspan="5">Loading security audit trail...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- PRINT SLIP MODAL -->
+  <div class="kiosk-modal" id="modalPrintSlip">
+    <div class="modal-card receipt-modal-card">
+      <div class="modal-header">
+        <h3>Transaction Receipt</h3>
+        <button class="modal-close" id="btnCloseReceiptModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="thermal-receipt" id="thermalReceiptContent">
+          <div class="receipt-header">
+            <h4>NATIONAL FORENSIC SCIENCES UNIVERSITY</h4>
+            <p>Central Library Self-Circulation Kiosk</p>
+            <p>Gandhinagar, Gujarat - India</p>
+            <div class="receipt-divider">================================</div>
+          </div>
+          <div class="receipt-patron-info" id="receiptPatronInfo">
+            <p><strong>Patron:</strong> <span id="recPatronName">--</span></p>
+            <p><strong>ID:</strong> <span id="recPatronId">--</span></p>
+            <p><strong>Date:</strong> <span id="recDate">--</span></p>
+            <div class="receipt-divider">--------------------------------</div>
+          </div>
+          <div class="receipt-items-list" id="receiptItemsList">
+            <!-- Filled dynamically -->
+          </div>
+          <div class="receipt-footer">
+            <div class="receipt-divider">================================</div>
+            <p>Please return items on or before due date.</p>
+            <p>Thank you for using NFSU Library Kiosk!</p>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="window.print()">Print Thermal Slip</button>
+          <button class="btn-secondary" id="btnCloseSlipBtn">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
