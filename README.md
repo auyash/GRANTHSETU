@@ -28,9 +28,9 @@ Traditional library circulation processes at the **National Forensic Sciences Un
   - Dynamic **Books Borrowed Status Badge** with real-time slot counter.
 
 ### 2. Koha 26 SIP2 Integration
-- Native TCP socket communication with NFSU's Koha 26 SIP2 server:
-  - **Server IP**: `117.239.182.15` | **Port**: `6001`
-  - **Credentials**: `rfid` / `Rfid@123` (or `rfid1`, `rfid2`)
+- Native TCP socket communication with Koha 26 SIP2 server:
+  - Configurable server parameters loaded securely via environment variables (see `.env.example`).
+  - Zero hardcoded credentials or server secrets committed to version control.
 - Fully compliant with 3M SIP2 standard messages:
   - `93 / 94`: Login handshake & heartbeat
   - `63 / 64`: Patron verification, status & charged items lookup
@@ -71,14 +71,35 @@ Traditional library circulation processes at the **National Forensic Sciences Un
 ### Prerequisites
 - Python 3.9+ installed
 
+### Environment Configuration
+Copy `.env.example` to `.env` to configure your environment:
+```bash
+copy .env.example .env
+```
+Key configuration parameters:
+- `KOHA_MODE`: `mock` for standalone offline simulation (default), `live` for Koha socket connection.
+- `KOHA_SERVER_IP`, `KOHA_SERVER_PORT`: Koha SIP2 server network address.
+- `KOHA_USER`, `KOHA_PASS`: Koha SIP2 credentials (also accepts `SIP2_USERNAME`, `SIP2_PASSWORD`).
+- `KOHA_LOCATION`: Koha library location code (default: `NFSU`).
+- `SIP2_ENCODING`: Character stream encoding (default: `utf-8`).
+- `SIP2_CHECK_SEQUENCE`: Strict AY sequence validation (`false` by default).
+- `SESSION_TIMEOUT_SECONDS`: Server-side inactivity timeout (default: `60`).
+- `HOST`, `PORT`: Web server binding (default: `127.0.0.1:8050`).
+
+### Koha Test-Server Pre-Flight Verification
+Before starting the kiosk in `live` mode, test the connection safely without risking circulation state or exposing credentials:
+```bash
+python test_koha_connection.py
+```
+For detailed instructions on configuring Koha's `SIPconfig.xml`, verifying character encoding, and enabling sequence checking, refer to the [Koha Administration Integration Guide](docs/KOHA_ADMIN_INTEGRATION_GUIDE.md).
+
 ### 1-Click Launch (Windows)
 Double-click `start_kiosk.bat` or run in terminal:
 ```bash
-cd GRANTHSETU
 pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn main:app --host 127.0.0.1 --port 8050 --reload
 ```
-Open your browser at: **`http://localhost:8000`** (Press `F11` for Fullscreen Touch Kiosk Mode).
+Open your browser at: **`http://localhost:8050`** (Press `F11` for Fullscreen Touch Kiosk Mode).
 
 ---
 
@@ -119,29 +140,50 @@ docker run -p 8000:8000 granthsetu-kiosk
 
 ```text
 GRANTHSETU/
-├── Dockerfile              # Containerization for 24/7 cloud hosting
-├── render.yaml             # Render.com cloud deployment config
-├── requirements.txt        # Python dependencies
-├── start_kiosk.bat         # 1-click Windows launch script
-├── main.py                 # FastAPI backend server
-├── kiosk_engine.py         # 2-book limit & RFID circulation controller
-├── README.md               # Project documentation
+├── Dockerfile                  # Containerization for 24/7 cloud hosting
+├── render.yaml                 # Render.com cloud deployment config
+├── requirements.txt            # Python dependencies (FastAPI, ReportLab, Pillow)
+├── start_kiosk.bat             # 1-click Windows launch script (port 8050)
+├── test_koha_connection.py     # Safe non-destructive Koha SIP2 connection tester
+├── main.py                     # FastAPI backend server with CORS & input sanitization
+├── kiosk_engine.py             # 2-book limit, tray management & RFID circulation controller
+├── README.md                   # Project documentation
+├── docs/
+│   └── KOHA_ADMIN_INTEGRATION_GUIDE.md  # Library admin Koha setup & staging protocol
+├── hardware/                   # Modular Hardware Abstraction Layer (HAL)
+│   ├── base.py                 # Abstract hardware adapters and device status contracts
+│   ├── barcode_scanner.py      # USB HID, Serial RS-232, and high-fidelity simulation
+│   ├── card_reader.py          # PC/SC USB contactless smart card reader & APDU commands
+│   ├── rfid_antenna.py         # ISO 15693 / ISO 28560 HF RFID antenna pad & exit gate
+│   └── manager.py              # Central peripheral coordinator & status diagnostics
+├── services/
+│   └── receipt_generator.py    # ReportLab digital PDF circulation slip compiler
 ├── security/
-│   ├── audit.py            # SHA-256 tamper-evident security audit logger
-│   └── biometrics.py       # Ephemeral face liveness & zero-retention engine
+│   ├── audit.py                # SHA-256 tamper-evident security audit logger
+│   └── biometrics.py           # Ephemeral face liveness & zero-retention engine
 ├── sip2/
-│   ├── protocol.py         # 3M SIP2 packet builder, parser & CRC-16 checksum
-│   ├── client.py           # TCP socket client to 117.239.182.15:6001
-│   └── mock_server.py      # Resilient offline failover SIP2 server
-└── static/
-    ├── index.html          # Touchscreen kiosk frontend
-    ├── css/
-    │   └── styles.css      # NFSU-branded glassmorphic UI stylesheet
-    ├── js/
-    │   └── app.js          # Web Audio synthesizer, gate tester & timer
-    └── images/
-        ├── nfsu_campus.jpg # Official NFSU campus building backdrop
-        └── nfsu_logo.png   # Official NFSU emblem and banner
+│   ├── protocol.py             # 3M SIP2 packet builder, parser & CRC-16 checksum
+│   ├── client.py               # Configurable TCP socket client for Koha SIP2
+│   └── mock_server.py          # Resilient offline failover SIP2 server
+├── static/
+│   ├── index.html              # Touchscreen kiosk frontend with tray & HAL diagnostics
+│   ├── css/
+│   │   └── styles.css          # NFSU-branded glassmorphic UI stylesheet
+│   ├── js/
+│   │   └── app.js              # Tray manager, Web Audio synthesizer, gate tester & timer
+│   └── images/
+│       ├── nfsu_campus.jpg     # Official NFSU campus building backdrop
+│       └── nfsu_logo.png       # Official NFSU emblem and banner
+└── tests/
+    ├── test_api_routes.py         # FastAPI REST route integration tests
+    ├── test_hardware_adapters.py  # HAL peripheral adapters & simulation tests
+    ├── test_biometrics.py         # Consent enforcement & 0-byte disk retention tests
+    ├── test_receipts_and_tray.py  # Tray limits, batch issue & PDF generator tests
+    ├── test_new_api_routes.py     # Health, HAL, and digital receipt endpoint tests
+    ├── test_koha_integration.py   # Koha connection, handshake & safety tests
+    ├── test_sip2_protocol.py      # SIP2 message building, parsing & checksums
+    ├── test_stream_framing.py     # TCP framing & chunk reassembly tests
+    └── test_transaction_safety.py # 2-book limit, inactivity timeout & RFID tests
 ```
 
 ---

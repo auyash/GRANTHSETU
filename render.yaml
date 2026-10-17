@@ -1,17 +1,25 @@
 services:
   - type: web
-    name: nfsu-library-kiosk
+    name: granthsetu-library-kiosk
     env: python
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: KOHA_MODE
+        value: mock
       - key: KOHA_SERVER_IP
-        value: 117.239.182.15
+        sync: false
       - key: KOHA_SERVER_PORT
-        value: 6001
+        sync: false
       - key: KOHA_USER
-        value: rfid
+        sync: false
       - key: KOHA_PASS
-        value: Rfid@123
+        sync: false
+      - key: KOHA_LOCATION
+        sync: false
+      - key: SIP2_ENCODING
+        value: utf-8
+      - key: SIP2_CHECK_SEQUENCE
+        value: "false"

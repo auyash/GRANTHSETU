@@ -19,9 +19,9 @@
   <!-- Top Bar: Connectivity & Security Status -->
   <header class="kiosk-topbar">
     <div class="topbar-left">
-      <span class="status-indicator live" id="kohaStatusDot"></span>
-      <span class="status-text" id="kohaStatusText">Koha 26 SIP2: Connected (117.239.182.15:6001)</span>
-      <span class="koha-mode-badge" id="kohaModeBadge">LIVE SIP2</span>
+      <span class="status-indicator warning" id="kohaStatusDot"></span>
+      <span class="status-text" id="kohaStatusText">Koha SIP2: Initializing status...</span>
+      <span class="koha-mode-badge" id="kohaModeBadge">CHECKING</span>
     </div>
 
     <div class="topbar-center" id="sessionTimerContainer" style="display: none;">
@@ -31,6 +31,10 @@
     </div>
 
     <div class="topbar-right">
+      <button class="topbar-btn hardware-btn" id="btnHardwareStatus" title="Hardware Abstraction Layer Diagnostics">
+        <span class="btn-icon">🔌</span>
+        <span id="hardwareTopbarText">HAL: Checking...</span>
+      </button>
       <button class="topbar-btn" id="btnSecurityAudit" title="Security & Compliance Audit">
         <span class="btn-icon">🛡️</span>
         <span>Security Audit</span>
@@ -45,82 +49,57 @@
   <!-- Main Kiosk Container -->
   <main class="kiosk-main-container">
 
-    <!-- SCREEN 1: LANDING / HOME SCREEN (Matches projector slide) -->
+    <!-- SCREEN 1: LANDING / HOME SCREEN (Matches reference photograph) -->
     <section class="kiosk-screen active" id="screenHome">
       <div class="kiosk-hero-card">
-        <!-- University Branding -->
+        <!-- University Branding Dark Header -->
         <div class="brand-header">
           <img src="/static/images/nfsu_logo.png" alt="NFSU Emblem" class="nfsu-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>'">
           <div class="brand-text">
             <h1 class="brand-title">National Forensic Sciences University</h1>
             <p class="brand-motto">Knowledge | Wisdom | Fulfilment</p>
-            <p class="brand-sub">An Institution of National Importance (Ministry of Home Affairs, Government of India)</p>
+            <p class="brand-sub">Central Library Self-Check Service</p>
           </div>
         </div>
 
-        <div class="kiosk-divider"></div>
-
-        <!-- Identification Method Selector -->
-        <div class="auth-method-selector">
-          <p class="auth-prompt">Select identification method or tap your card to begin:</p>
+        <!-- White / Light-Grey Content Panel Matching Reference Photo -->
+        <div class="kiosk-content-panel">
+          <!-- 3 Clearly Visible Patron Authentication Options -->
           <div class="auth-tabs">
-            <button class="auth-tab" id="tabFaceAuth">
+            <button class="auth-tab" id="tabFaceAuth" aria-label="Face Recognition Authentication">
               <span class="tab-icon">👤</span>
               <span class="tab-title">Face Recognition</span>
-              <span class="tab-badge">AI Liveness</span>
             </button>
-            <button class="auth-tab" id="tabCardAuth">
+            <button class="auth-tab" id="tabCardAuth" aria-label="MIFARE Smart Card Authentication">
               <span class="tab-icon">💳</span>
               <span class="tab-title">MIFARE Smart Card</span>
-              <span class="tab-badge">NFC / RFID</span>
             </button>
-            <button class="auth-tab" id="tabBarcodeAuth">
+            <button class="auth-tab" id="tabBarcodeAuth" aria-label="Person Barcode Authentication">
               <span class="tab-icon">🏷️</span>
-              <span class="tab-title">Patron Barcode</span>
-              <span class="tab-badge">Laser / ID</span>
+              <span class="tab-title">Person/Barcode</span>
             </button>
           </div>
-        </div>
 
-        <!-- Primary Circulation Actions (Matching projector photo) -->
-        <div class="circulation-actions-grid">
-          <button class="action-card issue-card" id="btnActionIssue">
-            <div class="action-icon-wrap">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><path d="M12 6v6"></path><path d="M9 9h6"></path></svg>
-            </div>
-            <div class="action-card-info">
+          <!-- 3 Large Primary Action Buttons: ISSUE, RETURN, RENEW -->
+          <div class="circulation-actions-grid">
+            <button class="action-card issue-card" id="btnActionIssue" aria-label="Issue library books">
               <h2 class="action-title">ISSUE</h2>
-              <p class="action-desc">Check out library books (Limit: 2 books max)</p>
-            </div>
-          </button>
-
-          <button class="action-card return-card" id="btnActionReturn">
-            <div class="action-icon-wrap">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><path d="M9 10l3-3 3 3"></path><path d="M12 7v7"></path></svg>
-            </div>
-            <div class="action-card-info">
+            </button>
+            <button class="action-card return-card" id="btnActionReturn" aria-label="Return library books">
               <h2 class="action-title">RETURN</h2>
-              <p class="action-desc">Return books & re-arm security tags</p>
-            </div>
-          </button>
-
-          <button class="action-card renew-card" id="btnActionRenew">
-            <div class="action-icon-wrap">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-            </div>
-            <div class="action-card-info">
+            </button>
+            <button class="action-card renew-card" id="btnActionRenew" aria-label="Renew borrowed books">
               <h2 class="action-title">RENEW</h2>
-              <p class="action-desc">Extend due dates on active borrowed books</p>
-            </div>
-          </button>
-        </div>
+            </button>
+          </div>
 
-        <!-- Quick Hardware / Simulator Dock -->
-        <div class="hardware-dock">
-          <span class="dock-label">💡 Demonstration Quick-Scan:</span>
-          <button class="dock-chip" data-scan="patron" data-id="NFSU2024001">Tap Card: Aarav (0/2 Books)</button>
-          <button class="dock-chip" data-scan="patron" data-id="NFSU2024002">Tap Card: Priya (1/2 Books)</button>
-          <button class="dock-chip danger-chip" data-scan="patron" data-id="NFSU2024003">Tap Card: Dr. Verma (2/2 - Limit Reached!)</button>
+          <!-- Quick Hardware / Simulator Dock -->
+          <div class="hardware-dock">
+            <span class="dock-label">💡 Demonstration Quick-Scan:</span>
+            <button class="dock-chip" data-scan="patron" data-id="NFSU2024001">Tap Card: Aarav (0/2 Books)</button>
+            <button class="dock-chip" data-scan="patron" data-id="NFSU2024002">Tap Card: Priya (1/2 Books)</button>
+            <button class="dock-chip danger-chip" data-scan="patron" data-id="NFSU2024003">Tap Card: Dr. Verma (2/2 - Limit Reached!)</button>
+          </div>
         </div>
 
       </div>
@@ -185,7 +164,8 @@
             <label id="scanInputLabel">Scan book barcode or place item on RFID pad:</label>
             <div class="input-with-button">
               <input type="text" id="inputBookBarcode" placeholder="e.g. BK-FOR-101, BK-CYB-201..." autocomplete="off">
-              <button class="btn-scan-action" id="btnExecuteScan">Process Item</button>
+              <button class="btn-scan-action secondary" id="btnAddToTray" title="Add item to pre-checkout tray">📥 Add to Tray</button>
+              <button class="btn-scan-action primary" id="btnExecuteScan" title="Process item directly">⚡ Instant Process</button>
             </div>
           </div>
           <div class="quick-sample-books">
@@ -197,17 +177,39 @@
           </div>
         </div>
 
-        <!-- Transaction Items Tray / Table -->
+        <!-- Transaction Items Tray & Completed Circulation History -->
         <div class="items-tray-card">
           <div class="tray-header">
-            <h4 id="trayTitle">Session Transaction Items</h4>
-            <span class="tray-counter" id="trayCountBadge">0 Items</span>
+            <div class="tray-title-group">
+              <h4 id="trayTitle">Transaction Tray (Pre-Checkout)</h4>
+              <span class="tray-counter" id="trayCountBadge">0 in Tray</span>
+            </div>
+            <div class="tray-header-actions" id="trayHeaderActions">
+              <button class="btn-tray-action checkout" id="btnCheckoutTray" title="Checkout all items currently in tray">
+                <span>📚 Checkout Tray</span>
+              </button>
+              <button class="btn-tray-action clear" id="btnClearTray" title="Clear all items from tray">
+                <span>🗑️ Clear Tray</span>
+              </button>
+            </div>
           </div>
 
+          <!-- Active Pre-Checkout Tray List -->
           <div class="tray-list" id="trayItemsList">
             <div class="tray-empty-state">
               <span class="empty-icon">📖</span>
-              <p>No items scanned yet in this session. Scan a book barcode or place it on the RFID antenna above.</p>
+              <p>Tray is currently empty. Click "Add to Tray" or scan items to stage them for simultaneous checkout (Max 2 books).</p>
+            </div>
+          </div>
+
+          <!-- Completed Session Transactions History -->
+          <div class="completed-history-section" id="completedHistorySection">
+            <div class="history-header">
+              <h5>Session Completed Transactions</h5>
+              <span class="history-counter" id="historyCountBadge">0 Completed</span>
+            </div>
+            <div class="history-list" id="historyItemsList">
+              <p class="history-empty-text">No confirmed transactions completed in this session yet.</p>
             </div>
           </div>
         </div>
@@ -222,7 +224,10 @@
           </div>
           <div class="footer-right">
             <button class="btn-print-slip" id="btnPrintSlip">
-              <span>🖨️ Print Receipt Slip</span>
+              <span>🖨️ Thermal Receipt</span>
+            </button>
+            <button class="btn-print-slip pdf-slip-btn" id="btnDownloadPdfSlip" title="Download official NFSU Central Library PDF Circulation Slip">
+              <span>📄 Official PDF Slip</span>
             </button>
             <button class="btn-finish-all" id="btnFinishSession">
               <span>Finish & Logout</span>
@@ -419,6 +424,66 @@
         <div class="modal-actions">
           <button class="btn-primary" onclick="window.print()">Print Thermal Slip</button>
           <button class="btn-secondary" id="btnCloseSlipBtn">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: HARDWARE ABSTRACTION LAYER (HAL) DIAGNOSTICS -->
+  <div class="kiosk-modal" id="modalHardwareStatus">
+    <div class="modal-card hardware-modal-card">
+      <div class="modal-header">
+        <div class="header-with-icon">
+          <span class="hardware-modal-icon">🔌</span>
+          <h3>Hardware Abstraction Layer (HAL) Status</h3>
+        </div>
+        <button class="modal-close" id="btnCloseHardwareModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hardware-modal-desc">
+          GRANTHSETU hardware subsystem status. Physical peripheral drivers (USB HID, PC/SC Contactless, and ISO 15693 RFID) are strictly decoupled from software simulation fallbacks.
+        </p>
+        <div class="hardware-cards-grid" id="hardwareCardsGrid">
+          <div class="hw-loading">Querying hardware diagnostics...</div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" id="btnRefreshHardware">Refresh Diagnostics</button>
+          <button class="btn-secondary" id="btnCloseHardwareModalBtn">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: OPERATOR RECONCILIATION FOR AMBIGUOUS TRANSACTIONS -->
+  <div class="kiosk-modal" id="modalReconciliation">
+    <div class="modal-card reconciliation-modal-card">
+      <div class="modal-header warning-header">
+        <div class="header-with-icon">
+          <span class="warning-icon">⚠️</span>
+          <h3>Operator Reconciliation Required (UNKNOWN_AFTER_SEND)</h3>
+        </div>
+        <button class="modal-close" id="btnCloseReconciliationModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="reconciliation-alert-box">
+          <h4 id="reconciliationTitle">Network Ambiguity Detected</h4>
+          <p id="reconciliationDetail">
+            A network interruption occurred during or after transmission to Koha ILMS. 
+            The system cannot confirm whether the circulation record committed on the server.
+          </p>
+          <div class="reconciliation-meta" id="reconciliationMeta"></div>
+        </div>
+        <div class="reconciliation-rules-box">
+          <h5>Mandatory Operator Reconciliation Procedure:</h5>
+          <ol id="reconciliationSteps">
+            <li><strong>DO NOT RETRY ON KIOSK:</strong> Automatic or immediate manual retry is strictly prohibited to prevent duplicate circulation entries or borrowing limit lockouts.</li>
+            <li><strong>RFID TAG REMAINS ARMED:</strong> The book's EAS security byte remains ARMED (AFI 0xC2) to prevent unauthorized library egress.</li>
+            <li><strong>INSPECT KOHA STAFF CLIENT:</strong> Search the patron's active checkouts or item circulation history in Koha ILMS to determine if the transaction actually committed.</li>
+            <li><strong>RESOLVE RECORD:</strong> If Koha shows the book checked out, use the staff RFID station to disarm the tag (AFI 0x07). If transaction failed on server, perform checkout in staff client.</li>
+          </ol>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" id="btnAcknowledgeReconciliation">Acknowledge & Dismiss</button>
         </div>
       </div>
     </div>

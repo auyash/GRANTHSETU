@@ -53,6 +53,13 @@ class MockKohaSIP2:
                 "valid": True,
                 "charged_items": ["BK-BAL-401"],
                 "fines": "0.00",
+            },
+            "BLOCKED_PATRON_01": {
+                "name": "Suspended Student",
+                "role": "Blocked Account",
+                "valid": False,
+                "charged_items": [],
+                "fines": "500.00",
             }
         }
 
@@ -123,18 +130,23 @@ class MockKohaSIP2:
         msg_type = msg[:2]
         ts = get_sip_timestamp()
 
+        # Extract incoming sequence number AY if present
+        all_fields = parse_fields(msg[2:])
+        ay_in = all_fields.get("AY")
+        seq_out = int(ay_in) if ay_in and ay_in.isdigit() else None
+
         # 93 -> 94 (Login)
         if msg_type == "93":
             fields = parse_fields(msg[4:])
             username = fields.get("CN", "")
             password = fields.get("CO", "")
-            # Valid accounts: rfid, rfid1, rfid2 with Rfid@123 / Rfid1@123 / Rfid2@123
+            # Valid accounts in simulation: accounts starting with 'rfid' (e.g., rfid, rfid1, rfid2)
             ok = "1" if username.startswith("rfid") else "0"
-            return format_message(f"94{ok}")
+            return format_message(f"94{ok}", seq_num=seq_out)
 
         # 63 -> 64 (Patron Information)
         elif msg_type == "63":
-            fields = parse_fields(msg[29:])
+            fields = parse_fields(msg[33:])
             patron_id = fields.get("AA", "").strip()
             
             # Auto-enroll unrecognized patron if needed, or query existing
@@ -163,7 +175,7 @@ class MockKohaSIP2:
                 f"AONFSU|AA{patron_id}|AE{patron['name']}|BL{'Y' if patron['valid'] else 'N'}|"
                 f"BK{charged_count}{charged_items_str}|"
             )
-            return format_message(body)
+            return format_message(body, seq_num=seq_out)
 
         # 17 -> 18 (Item Information)
         elif msg_type == "17":
@@ -188,7 +200,7 @@ class MockKohaSIP2:
                 f"AB{item_id}|AJ{item['title']}|CF{item['author']}|"
                 f"AQNFSU Central Library|APNFSU|AONFSU|"
             )
-            return format_message(body)
+            return format_message(body, seq_num=seq_out)
 
         # 11 -> 12 (Checkout)
         elif msg_type == "11":
@@ -207,7 +219,7 @@ class MockKohaSIP2:
                     f"AONFSU|AA{patron_id}|AB{item_id}|AJ{item.get('title')}|"
                     f"AFBorrowing limit reached (Maximum 2 books allowed). Please return a book first.|"
                 )
-                return format_message(body)
+                return format_message(body, seq_num=seq_out)
 
             # Checkout SUCCESS
             if item_id not in patron["charged_items"]:
@@ -223,11 +235,11 @@ class MockKohaSIP2:
                 f"AONFSU|AA{patron_id}|AB{item_id}|AJ{item.get('title')}|"
                 f"AH{due_dt}|AFCheckout successful. RFID security disarmed.|"
             )
-            return format_message(body)
+            return format_message(body, seq_num=seq_out)
 
         # 09 -> 10 (Checkin)
         elif msg_type == "09":
-            fields = parse_fields(msg[38:])
+            fields = parse_fields(msg[39:])
             item_id = fields.get("AB", "").strip()
             item = self.items.get(item_id, {"title": f"Book {item_id}"})
             
@@ -247,7 +259,7 @@ class MockKohaSIP2:
                 f"AONFSU|AB{item_id}|AJ{item.get('title')}|AQNFSU Central Library|"
                 f"AFItem returned successfully. RFID security re-armed.|"
             )
-            return format_message(body)
+            return format_message(body, seq_num=seq_out)
 
         # 29 -> 30 (Renew)
         elif msg_type == "29":
@@ -264,13 +276,13 @@ class MockKohaSIP2:
                 f"AONFSU|AA{patron_id}|AB{item_id}|AJ{item.get('title')}|"
                 f"AH{new_due}|AFRenewal successful. Due date extended.|"
             )
-            return format_message(body)
+            return format_message(body, seq_num=seq_out)
 
         # 35 -> 36 (End Session)
         elif msg_type == "35":
             fields = parse_fields(msg[20:])
             patron_id = fields.get("AA", "").strip()
             body = f"36Y{ts}AONFSU|AA{patron_id}|AFSession ended.|"
-            return format_message(body)
+            return format_message(body, seq_num=seq_out)
 
-        return format_message(f"96{ts}")
+        return format_message(f"96{ts}", seq_num=seq_out)
